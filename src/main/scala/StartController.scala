@@ -21,7 +21,7 @@ object StartController extends App {
 
   val start: Route =  pathEndOrSingleSlash{
     get{
-      complete((StatusCodes.OK, "Ok"))
+      getFromResource("signIn.html")
     }
   }
 
