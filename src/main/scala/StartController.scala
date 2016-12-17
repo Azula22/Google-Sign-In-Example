@@ -1,3 +1,5 @@
+import java.net.URL
+
 import DataContainer._
 import akka.event.slf4j.Logger
 import akka.http.scaladsl.Http
@@ -7,6 +9,8 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 
+import scala.util.{Failure, Success}
+
 object StartController extends App {
 
   private val logger = Logger("StartController")
@@ -14,10 +18,12 @@ object StartController extends App {
   def start: Route = path("login") {
     get {
       getFromResource("signIn.html", ContentTypes.`text/html(UTF-8)`)
-    } ~ (post & formFields('email.as[String], 'token.as[String])) {
-      (email, token) ⇒
-        if (validEmails.contains(email)) complete(StatusCodes.OK → email)
-        else reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
+    } ~ (post & formFields('email.as[String], 'token.as[String])) { (email, token) ⇒
+      googleSignInChecker(token) match {
+        case Right(true) if validEmails.contains(email) ⇒ complete(StatusCodes.OK → email)
+        case Left(errMessage) ⇒ complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
+        case other ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
+      }
     }
   }
 

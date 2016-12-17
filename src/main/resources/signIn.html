@@ -26,7 +26,8 @@
                 contentType: "application/x-www-form-urlencoded",
                 statusCode: {
                     200: function () {window.location.href = MAIN_PAGE},
-                    401: signOut()
+                    401: signOut(),
+                    500: signOut()
                 }
             })
         }
