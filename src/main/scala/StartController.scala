@@ -1,9 +1,8 @@
 import DataContainer._
 import akka.event.slf4j.Logger
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.headers.HttpChallenges
 import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.headers.{HttpChallenges, HttpCookie}
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
@@ -18,7 +17,7 @@ object StartController extends App {
     } ~ (post & formFields('email.as[String], 'token.as[String])) {
       (email, token) ⇒
         if (validEmails.contains(email)) complete(StatusCodes.OK → email)
-        else reject(AuthenticationFailedRejection.apply(CredentialsRejected, HttpChallenges.oAuth2("None")))
+        else reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
     }
   }
 

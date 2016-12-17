@@ -19,7 +19,6 @@
         }
 
         function validateAdminOnServer(email, token) {
-            var isGoodRest;
             $.ajax({
                 type: "POST",
                 url: LOGIN_PAGE,
@@ -30,10 +29,6 @@
                     401: signOut()
                 }
             })
-        }
-
-        function redirectTo(pageAdress) {
-            window.location.href = pageAdress
         }
 
         function signOut() {
