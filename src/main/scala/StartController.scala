@@ -20,8 +20,12 @@ object StartController extends App {
       getFromResource("signIn.html", ContentTypes.`text/html(UTF-8)`)
     } ~ (post & formFields('email.as[String], 'token.as[String])) { (email, token) ⇒
       googleSignInChecker(token) match {
-        case Right(true) if validEmails.contains(email) ⇒ complete(StatusCodes.OK → email)
-        case Left(errMessage) ⇒ complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
+        case Right(true) if validEmails.contains(email) ⇒
+          logger.info(s"Sign in user $email")
+          complete(StatusCodes.OK → email)
+        case Left(errMessage) ⇒
+          logger.error(s"An error occured $errMessage")
+          complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
         case other ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
       }
     }
