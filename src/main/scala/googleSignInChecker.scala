@@ -11,7 +11,7 @@ import scala.util.Try
   * Created by azula on 17.12.16.
   */
 
-object googleSignInChecker extends (String ⇒ Either[String, Boolean]) {
+object googleSignInChecker extends (String ⇒ Either[String, Option[String]]) {
 
   val jsonFactory: JsonFactory = JacksonFactory.getDefaultInstance
   val clientId   : String      = "988935906987-97ups7r848cfk71he7jp360svui2jich.apps.googleusercontent.com"
@@ -25,10 +25,14 @@ object googleSignInChecker extends (String ⇒ Either[String, Boolean]) {
       .build())
   } yield verifier
 
-  override def apply(tokenFromClient: String): Either[String, Boolean] =
+  override def apply(tokenFromClient: String): Either[String, Option[String]] =
     verifier
-    .map(v ⇒ Option(v.verify(tokenFromClient)).fold[Either[String, Boolean]](Right(false))(_ ⇒ Right(true)))
-    .recover { case ex ⇒ Left(ex.getMessage) }
+    .map(v ⇒
+      Option(v.verify(tokenFromClient)) match {
+        case Some(token) ⇒ Right(Option(token.getPayload.getEmail))
+        case None ⇒ Left("Token is invalid")
+      })
+    .recover { case ex ⇒ Left(s"An error occurred ${ex.getMessage}") }
     .get
 
 }
