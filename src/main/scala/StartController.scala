@@ -16,10 +16,10 @@ object StartController extends App {
   def start: Route = path("login") {
     get {
       getFromResource("signIn.html", ContentTypes.`text/html(UTF-8)`)
-    } ~ (post & formFields('email.as[String], 'token.as[String])) { (email, token) ⇒
-        val check = googleSignInChecker(token).map(_.getOrElse(email))
+    } ~ (post & formField('token.as[String])) { (token) ⇒
+        val check = googleSignInChecker(token)
         check match {
-          case Right(mailAddress) if validEmails.contains(mailAddress) ⇒
+          case Right(Some(mailAddress)) if validEmails.contains(mailAddress) ⇒
             logger.info(s"Sign in user $mailAddress")
             setSession[String](oneOff[String], usingCookies, token){
               complete(StatusCodes.OK → mailAddress)
@@ -27,7 +27,8 @@ object StartController extends App {
           case Left(errMessage)                                        ⇒
             logger.error(s"An error occured $errMessage")
             complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
-          case other                                                   ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
+          case other                                                   ⇒
+            reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
         }
     }
   }
@@ -40,9 +41,8 @@ object StartController extends App {
 
   val allRoutes = start ~ mainPage
 
-  Http().bindAndHandle(allRoutes, internalHost, internalPort).map {
-    serverBinding ⇒
-      logger.info(s"Server has started on address ${serverBinding.localAddress.getAddress.toString}:${serverBinding.localAddress.getPort.toString}")
+  Http().bindAndHandle(allRoutes, internalHost, internalPort).map { serverBinding ⇒
+    logger.info(s"Server has started on address ${serverBinding.localAddress.getAddress.toString}:${serverBinding.localAddress.getPort.toString}")
   } recover {
     case ex: Exception => logger.error(s"Server binding failed due to ${ex.getMessage}")
   }

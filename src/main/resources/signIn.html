@@ -15,33 +15,44 @@
         function onSignIn(googleUser) {
             const token = googleUser.getAuthResponse().id_token;
             const email = googleUser.getBasicProfile().getEmail();
-            validateAdminOnServer(email, token)
+            validateAdminOnServer(token)
         }
 
-        function validateAdminOnServer(email, token) {
+        function validateAdminOnServer(token) {
             $.ajax({
                 type: "POST",
                 url: LOGIN_PAGE,
-                data: "email=" + email + "&token=" + token,
+                data: "token=" + token,
                 contentType: "application/x-www-form-urlencoded",
                 statusCode: {
-                    200: function () {window.location.href = MAIN_PAGE},
-                    401: signOut(),
-                    500: signOut()
+                    200: function () {
+                        window.location.replace(MAIN_PAGE)
+                    },
+                    401: function () {
+                        var auth2 = gapi.auth2.getAuthInstance();
+                        auth2.signOut();
+                        window.location.replace(LOGIN_PAGE);
+                    },
+                    500: function () {
+                        var auth2 = gapi.auth2.getAuthInstance();
+                        auth2.signOut();
+                        window.location.replace(LOGIN_PAGE);
+                    }
                 }
             })
         }
 
-        function signOut() {
+        var signOut = function () {
             var auth2 = gapi.auth2.getAuthInstance();
             auth2.signOut();
-            window.location.href = LOGIN_PAGE;
+            window.location.replace(LOGIN_PAGE);
         }
+
 
     </script>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="https://apis.google.com/js/platform.js" ></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
     <meta name="google-signin-client_id"
           content="988935906987-97ups7r848cfk71he7jp360svui2jich.apps.googleusercontent.com">
 </head>
