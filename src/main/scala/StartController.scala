@@ -6,6 +6,8 @@ import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
 
 object StartController extends App {
 
@@ -15,24 +17,31 @@ object StartController extends App {
     get {
       getFromResource("signIn.html", ContentTypes.`text/html(UTF-8)`)
     } ~ (post & formFields('email.as[String], 'token.as[String])) { (email, token) ⇒
-      val check = googleSignInChecker(token).map(_.getOrElse(email))
-      check match {
-        case Right(mailAddress) if validEmails.contains(mailAddress) ⇒
-          logger.info(s"Sign in user $mailAddress")
-          complete(StatusCodes.OK → mailAddress)
-        case Left(errMessage) ⇒
-          logger.error(s"An error occured $errMessage")
-          complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
-        case other ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
-      }
+        val check = googleSignInChecker(token).map(_.getOrElse(email))
+        check match {
+          case Right(mailAddress) if validEmails.contains(mailAddress) ⇒
+            logger.info(s"Sign in user $mailAddress")
+            setSession[String](oneOff[String], usingCookies, token){
+              complete(StatusCodes.OK → mailAddress)
+            }
+          case Left(errMessage)                                        ⇒
+            logger.error(s"An error occured $errMessage")
+            complete(StatusCodes.InternalServerError → s"An error occured $errMessage")
+          case other                                                   ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.oAuth2("None")))
+        }
     }
   }
 
-  def mainPage = pathEndOrSingleSlash(complete(StatusCodes.OK → "Ok"))
+  def mainPage = pathEndOrSingleSlash {
+    requiredSession[String](oneOff[String], usingCookies) { _ ⇒
+      complete(StatusCodes.OK → "Ok")
+    }
+  }
 
   val allRoutes = start ~ mainPage
 
-  Http().bindAndHandle(allRoutes, internalHost, internalPort).map { serverBinding ⇒
+  Http().bindAndHandle(allRoutes, internalHost, internalPort).map {
+    serverBinding ⇒
       logger.info(s"Server has started on address ${serverBinding.localAddress.getAddress.toString}:${serverBinding.localAddress.getPort.toString}")
   } recover {
     case ex: Exception => logger.error(s"Server binding failed due to ${ex.getMessage}")
