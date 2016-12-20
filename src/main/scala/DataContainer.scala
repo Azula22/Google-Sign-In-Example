@@ -9,8 +9,16 @@ object DataContainer {
   implicit val executionContext = system.dispatcher
   implicit val materializer = ActorMaterializer()
 
-  val internalHost = "localhost"
-  val internalPort = 8080
+  object Routes {
+    val internalHost = "localhost"
+    val internalPort = 8080
+    val login = "login"
+  }
+
+  object Folders{
+    val javascriptFolder = "src/main/public/javascript"
+    val htmlFolder = "src/main/public/html"
+  }
 
   val validEmails = Seq("anna.kushyk.u@gmail.com")
 
