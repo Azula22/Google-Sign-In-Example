@@ -16,15 +16,13 @@ object StartController extends App {
   def start: Route = path(login) {
     get {
       getFromDirectory(s"$htmlFolder/login.html")
-    }  ~ (post & formField('token.as[String])) {
+    } ~ (post & formField('token.as[String])) {
       token ⇒
         val check = googleSignInChecker(token)
         check match {
           case Right(Some(mailAddress)) if validEmails.contains(mailAddress) ⇒
             logger.info(s"Sign in user $mailAddress")
-            setSession[String](oneOff[String], usingCookies, token) {
-              complete(StatusCodes.OK → mailAddress)
-            }
+            setSession[String](oneOff[String], usingCookies, token)(complete(StatusCodes.OK → mailAddress))
           case Left(errMessage)                                              ⇒
             logger.error(s"An error occurred $errMessage")
             complete(StatusCodes.InternalServerError → s"An error occurred $errMessage")
@@ -34,9 +32,11 @@ object StartController extends App {
     }
   }
 
-  def generalAccessResources = path("login.js") {
-    get {
+  def generalAccessResources = get {
+    path("login.js") {
       getFromDirectory(s"$javascriptFolder/login.js")
+    } ~ path("global.js") {
+      getFromDirectory(s"$javascriptFolder/global.js")
     }
   }
 
@@ -51,8 +51,7 @@ object StartController extends App {
     mainPage ~
     generalAccessResources
 
-  Http().bindAndHandle(allRoutes, internalHost, internalPort).map {
-    serverBinding ⇒
+  Http().bindAndHandle(allRoutes, internalHost, internalPort).map { serverBinding ⇒
       logger.info(s"Server has started on address ${serverBinding.localAddress.getAddress.toString}:${serverBinding.localAddress.getPort.toString}")
   } recover {
     case ex: Exception => logger.error(s"Server binding failed due to ${ex.getMessage}")
