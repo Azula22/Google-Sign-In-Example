@@ -15,9 +15,10 @@ object DataContainer {
     val login = "login"
   }
 
-  object Folders{
+  object Folders {
     val javascriptFolder = "src/main/public/javascript"
     val htmlFolder = "src/main/public/html"
+    val cssFolder = "src/main/public/css"
   }
 
   val validEmails = Seq("anna.kushyk.u@gmail.com")
